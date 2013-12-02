@@ -1,15 +1,18 @@
-﻿using UnityEngine;
+﻿/****
+ * Script qui gère les malus
+ */
+using UnityEngine;
 using System.Collections;
 
 public class MalusManager : MonoBehaviour {
 
-    public GameObject _generate;
-    public GameObject _selector;
+    public GameObject _generate; //GO comprenant le script de génération de ligne
+    public GameObject _selector; //GO comprenant le script de sélection de bombe 
 
     private GenerateLineScript generateLineScript;
     private SelectBombScript selectorScript;
 
-    private int nbRoque = 5;
+    private int nbRoque = 5; //nombre de roque pour le malus roque
     private static MalusManager instance;
     public static MalusManager Instance
     {
@@ -32,16 +35,19 @@ public class MalusManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        //apparation/disparition du message de malus
         if (malusText.GetComponent<MeshRenderer>().enabled)
             if (Time.time - time > timeMalusAnimDurtion)
                 malusText.GetComponent<MeshRenderer>().enabled = false;
 	}
 
+    //Fonction appelé pour dire au serveur d'envoyer un malus à un adversaire
     public void sendMalusToServer()
     {
         networkView.RPC("sendMalus", RPCMode.Server, Network.player.ToString());
     }
 
+    //Fonction qui envoie le malus
     [RPC]
     void sendMalus(string ID)
     {
@@ -52,16 +58,17 @@ public class MalusManager : MonoBehaviour {
             IdReceiver = 0;
         else
             IdReceiver = IdSender + 1;
-        networkView.RPC("chooseMalus", RPCMode.Others, StaticBoard.players[IdReceiver]);
+        networkView.RPC("chooseMalus", RPCMode.Others, StaticBoard.gamePlayers[IdReceiver]);
 
     }
 
+    //Fonction de choix de malus, l'id est la victime
     [RPC]
     void chooseMalus(string ID)
     {
         if (StaticBoard.AmIThisGuy(ID))
         {
-            switch ((int)Random.Range(0, 4))
+            switch ((int)Random.Range(0, 3))
             {
                 case 0:
                     addBlocks();
@@ -72,8 +79,6 @@ public class MalusManager : MonoBehaviour {
                 case 2:
                     newLine();
                     break;
-                case 3:
-                    break;
                 default:
                     break;
             }
@@ -81,6 +86,7 @@ public class MalusManager : MonoBehaviour {
         }
     }
 
+    //Fonction qui fait apparaitre le texte malus
     void malusAnim()
     {
         if (!malusText.GetComponent<MeshRenderer>().enabled)
@@ -91,7 +97,8 @@ public class MalusManager : MonoBehaviour {
 
 
     }
-
+    
+    //Ajoute des blocs indestructible de manière aléatoire chez un adversaire
     void addBlocks()
     {
         int nbBlocks = (int)Random.Range(2, 5);
@@ -106,11 +113,13 @@ public class MalusManager : MonoBehaviour {
         StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/IndestructibleBloc"), new Vector3((float)x, 0f, (float)y), Quaternion.identity) as GameObject;
     }
 
+    //Fonction dit au sélecteur que les prochaines tours seront des rois
     void roquer()
     {
         selectorScript.setRoque(nbRoque);
     }
 
+    //Fonction qui invoke instantanément une nouvelle ligne
     void newLine()
     {
         generateLineScript.CreateLine();

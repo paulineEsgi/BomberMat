@@ -12,23 +12,24 @@ using System.Collections;
 
 public class CreatFleetScript : MonoBehaviour {
 
-    public int[] _nbShip;
+    public int _nbMode;
     public GameObject[][] myTab;
 
 	// Use this for initialization
 	void Awake () {
 
-	    this.myTab = new GameObject[5][];
-        for (var i = 0; i < 5; i++)
+	    this.myTab = new GameObject[_nbMode][];
+        for (var i = 0; i < _nbMode; i++)
         {
-            this.myTab[i] = new GameObject[this._nbShip[i]];
+            this.myTab[i] = new GameObject[(int)StaticBoard.gameRule.NB_ELEMENTS];
         }
-        for (var i = 0; i < 5; i++)
+     /*   for (var i = 0; i < 5; i++)
         {
             for (var j = 0; j < this.myTab[i].Length; j++)
             {
             }
         } 
+        */
 	}
 
     // Update is called once per frame

@@ -16,8 +16,9 @@ public class MoveInFleetScript : MonoBehaviour {
     public GameObject _arrowLeft;
     public GameObject _arrowRight;
     public GameObject[] _tabs;
+	public Material[] _mat;
 
-    private GameObject[][] fleet;
+    private GameObject[][] gameMode;
 
     private int actualY;
     private int[] actualX;
@@ -29,16 +30,19 @@ public class MoveInFleetScript : MonoBehaviour {
 	// Use this for initialization
     void Start()
     {
-        this.actualX = new int[5];
-        fleet = GetComponent<CreatFleetScript>().myTab;
+        DefRules.starting();
+        gameMode = GetComponent<CreatFleetScript>().myTab;
+        this.actualX = new int[gameMode.Length];
         Vector3 pos = new Vector3(0, 0, 0);
         Quaternion angle = Quaternion.Euler(new Vector3(270, 0, 0));
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < gameMode.Length; i++)
         {
-            if (this.fleet[i].Length != 0)
+            if (this.gameMode[i].Length != 0)
             {
                 pos = new Vector3(0, -i * 7, 0);
-                this.fleet[i][0] = myInstantiate(pos, angle, "Ship" + i + " - 0" );
+                //this.gameMode[i][0] = myInstantiate(pos, angle, "Mode" + (i+1) + " - 1 " );
+				this.gameMode[i][0] = myInstantiate(pos, angle, "Arene " + (i+1) );
+				this.gameMode[i][0].GetComponent<MeshRenderer>().material = _mat[i];
             }
             else
             {
@@ -47,17 +51,8 @@ public class MoveInFleetScript : MonoBehaviour {
             }
             this.actualX[i] = 0;
         }
-        for (var i = 0; i < 5; i++)
-        {
-            if (this.fleet[i].Length != 0)
-            {
-                this.transform.position.Set(0, i * -7, 0);
-                this.actualY = i;
-                this.updateY(this.actualY);
-                break;
-            }
-        }
 
+        StaticBoard.rule = DefRules.rules[actualY];
         
         setCard();
     }
@@ -78,34 +73,34 @@ public class MoveInFleetScript : MonoBehaviour {
     public void updateXbyRight()
     {
         //this.destroyCard();
-        if (this.fleet[actualY].Length == 2)
+        if (this.gameMode[actualY].Length == 2)
         {
             Destroy(this.substitu);
         }
         else
         {
-            Destroy(this.fleet[actualY][this.actualX[this.actualY] > 0 ? this.actualX[this.actualY] - 1 : this.fleet[this.actualY].Length - 1]);
+            Destroy(this.gameMode[actualY][this.actualX[this.actualY] > 0 ? this.actualX[this.actualY] - 1 : this.gameMode[this.actualY].Length - 1]);
         }
-        Destroy(this.fleet[actualY][actualX[this.actualY]]);
-        this.actualX[this.actualY] = ++this.actualX[this.actualY] % this.fleet[actualY].Length;
+        Destroy(this.gameMode[actualY][actualX[this.actualY]]);
+        this.actualX[this.actualY] = ++this.actualX[this.actualY] % this.gameMode[actualY].Length;
         this.setCard();
     }
 
     public void updateXbyLeft()
     {
-        if (this.fleet[actualY].Length == 2)
+        if (this.gameMode[actualY].Length == 2)
         {
             GameObject inter = this.substitu;
-            this.substitu = this.fleet[actualY][actualX[this.actualY] == 0 ? 1 : 0];
-            this.fleet[actualY][actualX[this.actualY] == 0 ? 1 : 0] = inter;
+            this.substitu = this.gameMode[actualY][actualX[this.actualY] == 0 ? 1 : 0];
+            this.gameMode[actualY][actualX[this.actualY] == 0 ? 1 : 0] = inter;
             Destroy(this.substitu);
         }
         else
         {
-            Destroy(this.fleet[actualY][this.actualX[this.actualY] == this.fleet[this.actualY].Length - 1 ? 0 : this.actualX[this.actualY] + 1]);
+            Destroy(this.gameMode[actualY][this.actualX[this.actualY] == this.gameMode[this.actualY].Length - 1 ? 0 : this.actualX[this.actualY] + 1]);
         }
-        Destroy(this.fleet[actualY][actualX[this.actualY]]);
-        this.actualX[this.actualY] = this.actualX[this.actualY] == 0 ? this.fleet[this.actualY].Length - 1 : this.actualX[this.actualY] -= 1;
+        Destroy(this.gameMode[actualY][actualX[this.actualY]]);
+        this.actualX[this.actualY] = this.actualX[this.actualY] == 0 ? this.gameMode[this.actualY].Length - 1 : this.actualX[this.actualY] -= 1;
          
         this.setCard();
     }
@@ -121,7 +116,7 @@ public class MoveInFleetScript : MonoBehaviour {
 
     public void showArrow()
     {
-        if (this.fleet[this.actualY].Length == 1)
+        if (this.gameMode[this.actualY].Length == 1)
         {
             this._arrowLeft.SetActive(false);
             this._arrowRight.SetActive(false);
@@ -136,101 +131,114 @@ public class MoveInFleetScript : MonoBehaviour {
     private void setCard()
     {
         Quaternion angle = Quaternion.Euler(new Vector3(270,0,0));
-        if (this.fleet[actualY].Length == 2)
+        if (this.gameMode[actualY].Length == 2)
         {
             if (actualX[this.actualY] == 0)
             {
-                this.fleet[actualY][1] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Ship" + actualY + " - " + 1) as GameObject;
-                this.substitu = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Ship" + actualY + " - sub") as GameObject;
+                this.gameMode[actualY][1] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Arene " + 2) as GameObject;
+                this.substitu = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Arene - sub") as GameObject;
             }
             else
             {
-                this.fleet[actualY][0] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Ship" + actualY + " - " + 0) as GameObject;
-                this.substitu = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Ship" + actualY + " - sub") as GameObject;
+                this.gameMode[actualY][0] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Arene " + 1) as GameObject;
+                this.substitu = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Arene - sub") as GameObject;
             }
         }
-        if (this.fleet[actualY].Length > 2)
+        if (this.gameMode[actualY].Length > 2)
         {
             if (actualX[this.actualY] != 0)
-                this.fleet[actualY][actualX[this.actualY] - 1] = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Ship" + actualY + " - " + (actualX[this.actualY]-1)) as GameObject;
+            {
+                this.gameMode[actualY][actualX[this.actualY] - 1] = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Arene " + (actualX[this.actualY])) as GameObject;
+                this.gameMode[actualY][actualX[this.actualY] - 1].GetComponent<MeshRenderer>().material = _mat[actualX[this.actualY]-1];
+            }
             else
-                this.fleet[actualY][this.fleet[actualY].Length - 1] = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Ship" + actualY + " - " + (this.fleet[actualY].Length - 1)) as GameObject;
-
-            if (actualX[this.actualY] != this.fleet[actualY].Length - 1)
-                this.fleet[actualY][actualX[this.actualY] + 1] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Ship" + actualY + " - " + (actualX[this.actualY]+1)) as GameObject;
+            {
+                this.gameMode[actualY][this.gameMode[actualY].Length - 1] = myInstantiate(new Vector3(-7, actualY * -7, 0), angle, "Arene " + (this.gameMode[actualY].Length)) as GameObject;
+                this.gameMode[actualY][this.gameMode[actualY].Length - 1].GetComponent<MeshRenderer>().material = _mat[this.gameMode[actualY].Length-1];
+            }
+            if (actualX[this.actualY] != this.gameMode[actualY].Length - 1)
+            {
+                this.gameMode[actualY][actualX[this.actualY] + 1] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Arene " + (actualX[this.actualY] + 2)) as GameObject;
+                this.gameMode[actualY][actualX[this.actualY] + 1].GetComponent<MeshRenderer>().material = _mat[actualX[this.actualY] + 1];
+            }
             else
-                this.fleet[actualY][0] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Ship" + actualY + " - " + 0) as GameObject;
+            {
+                this.gameMode[actualY][0] = myInstantiate(new Vector3(7, actualY * -7, 0), angle, "Arene " + 1) as GameObject;
+                this.gameMode[actualY][0].GetComponent<MeshRenderer>().material = _mat[0];
+            }
         }
+        StaticBoard.rule = DefRules.rules[actualX[actualY]];
+        StaticBoard.ruleID = actualX[actualY];
     }
 
     private void destroyCard()
     {
 
-        if (this.fleet[actualY].Length == 2)
+        if (this.gameMode[actualY].Length == 2)
         {
             if (actualX[this.actualY] == 0)
             {
-                Destroy(this.fleet[actualY][1]);
+                Destroy(this.gameMode[actualY][1]);
             }
             else
-                Destroy(this.fleet[actualY][0]);
+                Destroy(this.gameMode[actualY][0]);
             Destroy(this.substitu);
         }
-        if (this.fleet[actualY].Length > 2)
+        if (this.gameMode[actualY].Length > 2)
         {
             if (actualX[this.actualY] != 0)
-                Destroy(this.fleet[actualY][actualX[this.actualY] - 1]);
+                Destroy(this.gameMode[actualY][actualX[this.actualY] - 1]);
             else
-                Destroy(this.fleet[actualY][this.fleet[actualY].Length - 1]); 
+                Destroy(this.gameMode[actualY][this.gameMode[actualY].Length - 1]); 
 
-            if (actualX[this.actualY] != this.fleet[actualY].Length - 1)
-                Destroy(this.fleet[actualY][actualX[this.actualY] + 1]);
+            if (actualX[this.actualY] != this.gameMode[actualY].Length - 1)
+                Destroy(this.gameMode[actualY][actualX[this.actualY] + 1]);
             else
-                Destroy(this.fleet[actualY][0]);
+                Destroy(this.gameMode[actualY][0]);
         }
     }
 
 
     public GameObject getFleet()
     {
-        return this.fleet[this.actualY][this.actualX[this.actualY]];
+        return this.gameMode[this.actualY][this.actualX[this.actualY]];
     }
     public GameObject getFleetNext()
     {
-        if (this.actualX[this.actualY] + 1 >= this.fleet[this.actualY].Length)
+        if (this.actualX[this.actualY] + 1 >= this.gameMode[this.actualY].Length)
         {
-            return this.fleet[this.actualY][0];
+            return this.gameMode[this.actualY][0];
         }
-        return this.fleet[this.actualY][this.actualX[this.actualY]+1];
+        return this.gameMode[this.actualY][this.actualX[this.actualY]+1];
     }
     public GameObject getFleetPrev()
     {
-        if (this.fleet[this.actualY].Length == 2)
+        if (this.gameMode[this.actualY].Length == 2)
         {
             Vector3 inter = this.substitu.transform.position;
-            this.substitu.transform.position = this.fleet[actualY][actualX[this.actualY] == 0 ? 1 : 0].transform.position;
-            this.fleet[actualY][actualX[this.actualY] == 0 ? 1 : 0].transform.position = inter;
+            this.substitu.transform.position = this.gameMode[actualY][actualX[this.actualY] == 0 ? 1 : 0].transform.position;
+            this.gameMode[actualY][actualX[this.actualY] == 0 ? 1 : 0].transform.position = inter;
         }
         if (this.actualX[this.actualY] != 0)
-            return this.fleet[this.actualY][this.actualX[this.actualY] - 1];
-        return this.fleet[this.actualY][this.fleet[this.actualY].Length-1];
+            return this.gameMode[this.actualY][this.actualX[this.actualY] - 1];
+        return this.gameMode[this.actualY][this.gameMode[this.actualY].Length-1];
     }
 
     public GameObject[] getFleetOnY()
     {
         GameObject[] inter = new GameObject[3];
-        if (this.fleet[actualY].Length == 2)
+        if (this.gameMode[actualY].Length == 2)
         {
             if (actualX[this.actualY] == 0)
             {
-                inter[2] = this.fleet[this.actualY][1];
-                inter[1] = this.fleet[this.actualY][0];
+                inter[2] = this.gameMode[this.actualY][1];
+                inter[1] = this.gameMode[this.actualY][0];
                 inter[0] = substitu;
             }
             else
             {
-                inter[2] = this.fleet[this.actualY][0];
-                inter[1] = this.fleet[this.actualY][1];
+                inter[2] = this.gameMode[this.actualY][0];
+                inter[1] = this.gameMode[this.actualY][1];
                 inter[0] = substitu;
             }
 
@@ -239,9 +247,9 @@ public class MoveInFleetScript : MonoBehaviour {
         }
         else
         {
-            inter[0] = this.fleet[this.actualY][this.actualX[this.actualY]>0?this.actualX[this.actualY] - 1 : this.fleet[this.actualY].Length-1];
-            inter[1] = this.fleet[this.actualY][this.actualX[this.actualY]];
-            inter[2] = this.fleet[this.actualY][this.actualX[this.actualY] == this.fleet[this.actualY].Length - 1 ? 0 :this.actualX[this.actualY] + 1];
+            inter[0] = this.gameMode[this.actualY][this.actualX[this.actualY]>0?this.actualX[this.actualY] - 1 : this.gameMode[this.actualY].Length-1];
+            inter[1] = this.gameMode[this.actualY][this.actualX[this.actualY]];
+            inter[2] = this.gameMode[this.actualY][this.actualX[this.actualY] == this.gameMode[this.actualY].Length - 1 ? 0 :this.actualX[this.actualY] + 1];
         }
         return inter;
     }

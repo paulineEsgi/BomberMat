@@ -1,18 +1,22 @@
-﻿using UnityEngine;
+﻿/****
+ * Script qui gère l'apparition des nouvelles lignes de blocs
+ */
+using UnityEngine;
 using System.Collections;
 
 public class GenerateLineScript : MonoBehaviour {
 
-    public GameObject _indestructileBloc;
+    public GameObject _indestructileBloc; //Prefabs des blocs
     public GameObject _destructileBloc;
 
     public int _time;
     private float time;
 
-    private int nbLineCreated;
-    private int probabilityBlock;
-    private int probabilityIBlock;
-    private GameObject[] line;
+
+    private int nbLineCreated; //Nombre de ligne créé
+    private int probabilityBlock; //Chance d'apparition d'un bloc destructible
+    private int probabilityIBlock; // Chance d'apparition dd'un bloc indestructible
+    private GameObject[] line; //Tableau virtualisant la ligne des nouveaux blocs
  
 	// Use this for initialization
 	void Start () {
@@ -26,12 +30,20 @@ public class GenerateLineScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
         //Toutes les X secondes, une ligne apparait
-        if (Time.time - time >= _time && Network.isServer)
-        {
-            networkView.RPC("CreateLine", RPCMode.Others);
-            networkView.RPC("incrementLineCreated", RPCMode.Others);
-            time = Time.time;
-        }
+        if (Time.time - time >= _time )
+            //En mode multi, le serveur fait apparaitre des lignes pour tous les joueurs en même temps
+            if (!StaticBoard.solo && Network.isServer)
+            {
+                networkView.RPC("CreateLine", RPCMode.Others);
+                networkView.RPC("incrementLineCreated", RPCMode.Others);
+                time = Time.time;
+            }
+            else
+            {
+                CreateLine();
+                incrementLineCreated();
+                time = Time.time;
+            }
 	}
 
     //Fonction de création de ligne
@@ -54,28 +66,31 @@ public class GenerateLineScript : MonoBehaviour {
         bool isIBlock = false;
         for (int i = 0; i < StaticBoard.sizeZ; i += 1)
         {
-            //Destroy(line[i]);
+            //On ne fait apparaitre des bloc indestructible qu'une ligne sur deux
             if(nbLineCreated%2==0)
                isIBlock = Random.Range(0f, 1f) < probabilityIBlock / 200f;
+
             if (!isIBlock)
                 isBlock = Random.Range(0f, 1f) < probabilityBlock / 100f;
 
             if (isIBlock)
                 line[i] = Instantiate(_indestructileBloc, new Vector3((float)StaticBoard.sizeX, 0f, i), Quaternion.identity) as GameObject;
+            
             if (isBlock)
                 line[i] = Instantiate(_destructileBloc, new Vector3((float)StaticBoard.sizeX, 0f, i), Quaternion.identity) as GameObject;
             isIBlock = false;
             isBlock = false;
         }
-        
     }
-
+    
+    //On rajoute un au nombre de ligne invoquée par le serveur
     [RPC]
     void incrementLineCreated()
     {
         nbLineCreated += 1;
     }
 
+    //On décale toute la map vers la gauche
     void MoveMap(ref GameObject[] newLine)
     {
         GameObject[] bombs;
@@ -119,11 +134,14 @@ public class GenerateLineScript : MonoBehaviour {
                     StaticBoard.bomb[i][j] = StaticBoard.bomb[i + 1][j];
             }
         }
+        //Les blocs dans le vides sont détruits
         for (int j = 0; j < StaticBoard.sizeZ; j += 1)
         {
             if (StaticBoard.map[i][j] != null)
                 Destroy(StaticBoard.map[i][j]);
         }
+
+        //On ajoute la nouvelle ligne
         for (int j = 0; j < StaticBoard.sizeZ; j += 1)
         {
             if (newLine[j] != null)
@@ -134,13 +152,7 @@ public class GenerateLineScript : MonoBehaviour {
                     StaticBoard.map[i][j] = Instantiate(_indestructileBloc, new Vector3((float)StaticBoard.sizeX, 0f, j - 4f), Quaternion.identity) as GameObject;
                 Destroy(newLine[j]);            
             }
-           // else if(StaticBoard.map[StaticBoard.sizeX - 1][i] != null)
-             //   Destroy(StaticBoard.map[StaticBoard.sizeX - 1][i]);
-        }
-        if (StaticBoard.map[i][StaticBoard.sizeZ - 1] != null)
-        {
-           // Debug.Log(StaticBoard.map[i][StaticBoard.sizeZ - 1].transform.localPosition.x + " " + StaticBoard.map[i][StaticBoard.sizeZ - 1].transform.localPosition.z);
-          //  Debug.Log(newLine[StaticBoard.sizeZ - 1].transform.localPosition.x + " " + newLine[StaticBoard.sizeZ - 1].transform.localPosition.z);
+           
         }
         for (i = 0; i < StaticBoard.sizeX; i += 1)
         {
@@ -156,7 +168,6 @@ public class GenerateLineScript : MonoBehaviour {
                 }
             }
         }
-        //Debug.Log(StaticBoard.map[StaticBoard.sizeX - 1][StaticBoard.sizeZ - 1].transform.localPosition.x);
 
     }
 }

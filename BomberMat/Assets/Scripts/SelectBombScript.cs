@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿/****
+ * Script qui gère la sélection des bombes
+ */
+using UnityEngine;
 using System.Collections;
 
 public class SelectBombScript : MonoBehaviour {
@@ -12,7 +15,8 @@ public class SelectBombScript : MonoBehaviour {
     private int roque=0;
 
 	// Use this for initialization
-	void Start () {
+    public void Init()
+    {
         time = (int) Time.time; 
         bombs = new int[_size];
         bombsObject = new GameObject[_size];
@@ -63,15 +67,11 @@ public class SelectBombScript : MonoBehaviour {
                     bombsObject[i] = (GameObject) Instantiate(Resources.Load("Prefab/selector/Rook"));
                     break;
             }
-            bombsObject[i].transform.localPosition = new Vector3(i * 4f, -4f, -4f);
+            bombsObject[i].transform.localPosition = new Vector3(i * 3f + 3f, 0f, -2f);
         }
 	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 
+    //Fonction qui sert pour le malus roque
     public void setRoque(int value)
     {
         roque = value;
@@ -95,16 +95,29 @@ public class SelectBombScript : MonoBehaviour {
         {
             bombs[i] = bombs[i+1];
             bombsObject[i] = bombsObject[i+1];
-            bombsObject[i].transform.Translate(new Vector3(-4f, 0,0));
+            bombsObject[i].transform.Translate(new Vector3(-3f, 0,0));
         }
         //Plus la partie dure, plus les probabilité d'avoir une piece se valent
         int piece =  (int)Random.Range(0, 100 + ((Time.time - time)/10)*6 );
+        if (BonusScript.promo && piece < 25)
+        {
+            piece = (int)Random.Range(25, 100 + ((Time.time - time) / 10) * 6);
+            BonusScript.promo = false;
+        }
+
         if (piece < 25 + ((Time.time - time) / 10))
-            bombs[i] = (int)StaticBoard.bombType.PAWN;
+                bombs[i] = (int)StaticBoard.bombType.PAWN;
         else if (piece < 45 + ((Time.time - time) / 10))
             bombs[i] = (int)StaticBoard.bombType.KING;
         else if (piece < 60 + ((Time.time - time) / 10))
+        {
+            if (roque > 0)
+            {
+                bombs[i] = (int)StaticBoard.bombType.PAWN;
+                roque -= 1;
+            }
             bombs[i] = (int)StaticBoard.bombType.ROOK;
+        }
         else if (piece < 75 + ((Time.time - time) / 10))
             bombs[i] = (int)StaticBoard.bombType.KNIGHT;
         else if (piece < 90 + ((Time.time - time) / 10))
@@ -134,7 +147,7 @@ public class SelectBombScript : MonoBehaviour {
                 bombsObject[i] = (GameObject)Instantiate(Resources.Load("Prefab/selector/Rook"));
                 break;
         }
-        bombsObject[i].transform.localPosition = new Vector3(i * 4f, -4f, -4f);
+        bombsObject[i].transform.localPosition = new Vector3(i * 3f + 3f, 0f, -2f);
     }
 
 }

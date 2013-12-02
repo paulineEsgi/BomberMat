@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿/****
+ * Script qui gère les bombes
+ */
+using UnityEngine;
 using System.Collections;
 
 public class BombScript : MonoBehaviour {
 
     
-
+    //Direction des flammes
     enum direction
     {
         NORTH,
@@ -19,24 +22,25 @@ public class BombScript : MonoBehaviour {
 
 
 
-    public float timeBeforeExplosion = 5f;
-    public GameObject _fire;
+    public float timeBeforeExplosion = 5f; //Temps avant explosion
+    public GameObject _fire; //Objet désignant une flamme
 
-    private float time;
-    public int _type;
+    private float time; 
+    public int _type; //Type de la bombe
 
-    private bool show = false;
+    private bool show = false; 
 
 
-	// Use this for initialization
+
 	void Start () {
         if(!show)
         time = Time.time;
 	}
 	
-	// Update is called once per frame
+
 	void Update () {
 
+        //Si le temps est écoulé, la bombe explose
         if (Time.time - time >= timeBeforeExplosion && !show)
         {
             explosion(_type);
@@ -45,6 +49,7 @@ public class BombScript : MonoBehaviour {
         }
 	}
 
+    //une bombe est posée directement sur le joueur, il peut passer à travers pour partir mais après il est bloqué
     void OnTriggerExit()
     {
         transform.collider.isTrigger = false;
@@ -58,7 +63,8 @@ public class BombScript : MonoBehaviour {
     //Cette fonction sert à créer les patterns des bombes
     void explosion(int type)
     {
-        
+        //Compte le nombre de bombes explosées
+        StaticBoard.bombDropped--;
         int x = (int) transform.localPosition.x;
         int z = (int) transform.localPosition.z;
         switch (type)
@@ -128,6 +134,7 @@ public class BombScript : MonoBehaviour {
         }
     }
 
+    //Fonction qui instantie les flammes
     void createFire(int x, int y)
     {
         if (!testCollision(x, y))
@@ -136,14 +143,16 @@ public class BombScript : MonoBehaviour {
         }   
     }
 
+    //Fonction récursive servant à créer les flammes contigue
     void longFire(int x, int y, int dir, int range)
     {
 
-        
+        //S'il n'y a pas de collision et que la portée de la flamme n'est pas encore atteinte
         if (!testCollision(x, y) && range > 0)
         {
-           
+           //On crée la flamme...
             Instantiate(_fire, new Vector3(x, 0, y), Quaternion.identity);
+            //Puis en fonction de sa direction on continu la propagation
             switch (dir)
             {
                 case (int)direction.NORTH :
@@ -174,22 +183,60 @@ public class BombScript : MonoBehaviour {
         }  
     }
 
+    //Fonction de test de collision
     bool testCollision(int x, int y)
     {
-        //Debug.Log("stop les bugs là !!");
-        //Il y a collision si on tape contre un bloc
+        //Il y a collision si on est contre un mur
         if (x < 0 || y < 0 || x >= StaticBoard.sizeX || y >= StaticBoard.sizeZ)
             return true;
+
+        //Il y a collision si on tape contre un bloc
         if (StaticBoard.map[x][y] != null)
         {
             //S'il est destructible... on le détruit
             if (StaticBoard.map[x][y].tag == "destructible")
             {
                 Destroy(StaticBoard.map[x][y]);
-                StaticBoard.map[x][y] = null;
-                if (testLine(x))
+
+                //Si la map est avec piques, il y a une chance pour qu'un bloque de pique se crée
+                if (StaticBoard.rule.getIsHoles() && Random.Range(0,6) > 4)
+                {
+                    StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/Bomb/Spike"), new Vector3((float)x, 0f, (float)y), Quaternion.identity) as GameObject;
+                }
+                //De même pour les accélérateur
+                else if (StaticBoard.rule.getIsSpeedWalk() && Random.Range(0, 8) > 4)
+                {
+                    int rdm = Random.Range(0, 3);
+                    Debug.Log(rdm);
+                    Quaternion rot;
+                    if (rdm == 1)
+                        rot = new Quaternion(0, 90f, 0, 0);
+                    if (rdm == 2)
+                        rot = new Quaternion(0, 180f, 0, 0);
+                    if (rdm == 3)
+                        rot = new Quaternion(0, 270f, 0, 0);
+                    else rot = Quaternion.identity;
+                    StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/speedWalk"), new Vector3((float)x, -0.4f, (float)y), rot) as GameObject;
+                }
+                //Sinon on laisse un vide
+                else
+                {
+                    StaticBoard.map[x][y] = null;
+                    //Qui peut être comblé par un bonus
+                    if (Random.Range(0, 5) == 4)
+                    {
+                        int rand = Random.Range(0, 3);
+                        if (rand == 0)
+                            StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/Bonus1"), new Vector3((float)x, 0f, (float)y), Quaternion.identity) as GameObject;
+                        if (rand == 1)
+                            StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/Bonus2"), new Vector3((float)x, 0f, (float)y), Quaternion.identity) as GameObject;
+                        if (rand == 2)
+                            StaticBoard.map[x][y] = Instantiate(Resources.Load("Prefab/Bonus3"), new Vector3((float)x, 0f, (float)y), Quaternion.identity) as GameObject;
+                    }
+                }
+                //On test si une ligne est détruite
+                if (testLine(x) && !StaticBoard.solo)
                     MalusManager.Instance.sendMalusToServer();
-                  //  Debug.Log("MALUS DANS TA FACE §§§§");
             }
             return true;
         }
@@ -198,10 +245,10 @@ public class BombScript : MonoBehaviour {
         {
             StaticBoard.bomb[x][y].GetComponent<BombScript>().timeBeforeExplosion = 0;
         }
-        //Et il y a aussi collision si on est contre un mur
         return false ;
     }
 
+    //Fonction qui vérifie si une ligne est détruite
     bool testLine(int x)
     {
         for (int i = 0; i < StaticBoard.sizeZ; i += 1)

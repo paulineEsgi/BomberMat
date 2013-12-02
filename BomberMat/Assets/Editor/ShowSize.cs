@@ -13,6 +13,7 @@ class ShowSize : EditorWindow
         sizeWindow.Show();
     }
 
+
     void OnGUI()
     {
         GameObject thisObject = Selection.activeObject as GameObject;

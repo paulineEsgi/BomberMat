@@ -1,19 +1,33 @@
-﻿using UnityEngine;
+﻿/****
+ * Script qui gère la génération de la map initiale
+ */
+using UnityEngine;
 using System.Collections;
 
 public class GenerateScript : MonoBehaviour {
 
-	public GameObject _indestructileBloc;
+	public GameObject _indestructileBloc; //Préfabs de blocs
 	public GameObject _destructileBloc;
+
+    public GameObject[] _ground;
+    public Material _iceMat;
 
     public int _probabilityBlock; //Bloquer entre 0 et 100
     public int _probabilityIBlock; //Bloquer entre 0 et 100
 	
 	private int sizeX;
 	private int sizeZ;
+
+    public GameObject player;
 	// Use this for initialization
     void Start()
     {
+
+        if (StaticBoard.rule.getIsHoles())
+        {
+            _ground[0].renderer.material = _iceMat;
+            _ground[1].renderer.material = _iceMat;
+        }
         GameObject[][] map;
         bool isBlock = false;
         bool isIBlock = false;
@@ -85,6 +99,8 @@ public class GenerateScript : MonoBehaviour {
         else
             destroyCenter();
 
+        player.transform.localPosition = new Vector3(9f, 0.366514f, 5f);
+        player.SetActive(true);
     }
 
     // Update is called once per frame
